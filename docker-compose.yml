@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:15.4
+    container_name: postgres
+    environment:
+      POSTGRES_DB: store_product
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - database:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+    networks:
+      - store-product-api
+    restart: always
+
+  store_product_api:
+    container_name: store_product_api
+    image: store-product-api:dev
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - ./secrets/.env
+    environment:
+      HOST: localhost
+      HOST_BASE_URL: "http://localhost:3333"
+      DOCKER_HOST_BASE_URL: "http://store_product_api:3333"
+      PORT: "3333"
+      NODE_ENV: development
+      DEBUG: "true"
+      APP_NAME: "Store Product Api"
+    command: yarn start:dev
+    ports:
+      - 3333:3333
+    networks:
+      - store-product-api
+    depends_on:
+      - postgres
+    volumes:
+      - ./:/app/
+      - backend_node_modules:/app/node_modules
+    restart: unless-stopped
+
+networks:
+  store-product-api:
+    driver: bridge
+
+volumes:
+  database:
+  backend_node_modules:
